@@ -1,0 +1,395 @@
+/* ─── RESET & TOKENS ──────────────────────────────────────────────────────── */
+:root {
+  --ink:    #151b28;
+  --paper:  #fefcf3;
+  --panel:  #fefcf3;
+  --gold:   #f0b844;
+  --mint:   #35aa88;
+  --blue:   #2f7ad8;
+  --violet: #7659c7;
+  --shadow: rgba(21, 27, 40, .22);
+  --radius: 0px;               /* pixel-art: no border-radius */
+  --border: 3px solid #151b28;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 100%; height: 100%; overflow: hidden; }
+
+body {
+  font-family: Inter, system-ui, sans-serif;
+  background: #1a0e2e;        /* deep space behind game */
+}
+
+button { border: 0; cursor: pointer; font: inherit; }
+
+/* ─── GAME WRAP ────────────────────────────────────────────────────────────── */
+#game-wrap {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: stretch;
+}
+
+/* Canvas container: fills the screen */
+#map {
+  flex: 1 1 auto;
+  position: relative;
+  overflow: hidden;
+  background: #8ed073;
+  image-rendering: pixelated;
+}
+
+#map canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  cursor: crosshair;
+}
+
+/* ─── HUD: NOTE (top-left) ─────────────────────────────────────────────────── */
+.hud-note {
+  position: fixed;
+  top: 14px;
+  left: 14px;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: #fff;
+  font-family: "Press Start 2P", monospace;
+  font-size: 8px;
+  line-height: 1.8;
+  text-shadow: 1px 1px 0 #000, -1px -1px 0 #000;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* ─── HUD: ACTION BUTTONS (top-right) ──────────────────────────────────────── */
+.hud-actions {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  z-index: 30;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+/* ─── PIXEL BUTTON ─────────────────────────────────────────────────────────── */
+.pixel-btn {
+  min-height: 36px;
+  padding: 8px 12px;
+  color: var(--ink);
+  background: var(--paper);
+  border: var(--border);
+  border-radius: var(--radius);
+  font-family: "Press Start 2P", monospace;
+  font-size: 8px;
+  font-weight: 900;
+  box-shadow: 0 4px 0 var(--ink);
+  transition: transform .1s, box-shadow .1s, background .1s;
+  white-space: nowrap;
+}
+.pixel-btn:hover  { transform: translateY(1px); box-shadow: 0 3px 0 var(--ink); background: #fff0ba; }
+.pixel-btn:active { transform: translateY(4px); box-shadow: 0 0 0 var(--ink); }
+.pixel-btn.active { color: var(--paper); background: var(--mint); }
+
+/* ─── HUD: DIALOGUE BOX (bottom) ───────────────────────────────────────────── */
+.dialogue-box {
+  position: fixed;
+  left: 50%;
+  bottom: 90px;
+  transform: translateX(-50%);
+  z-index: 30;
+  width: min(640px, calc(100vw - 24px));
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  background: var(--paper);
+  border: 4px solid var(--ink);
+  box-shadow: 6px 6px 0 var(--shadow);
+}
+
+.dialogue-text {
+  flex: 1;
+  font-family: "Press Start 2P", monospace;
+  font-size: clamp(8px, 1.4vw, 11px);
+  line-height: 1.9;
+  color: var(--ink);
+}
+
+.enter-btn {
+  display: none;
+  min-height: 36px;
+  padding: 8px 12px;
+  color: var(--ink);
+  background: var(--gold);
+  border: var(--border);
+  box-shadow: 0 4px 0 var(--ink);
+  font-family: "Press Start 2P", monospace;
+  font-size: 8px;
+  font-weight: 900;
+  white-space: nowrap;
+  transition: transform .1s, box-shadow .1s;
+}
+.enter-btn:hover  { transform: translateY(1px); box-shadow: 0 3px 0 var(--ink); }
+.enter-btn:active { transform: translateY(4px); box-shadow: 0 0 0 var(--ink); }
+.enter-btn.show { display: inline-flex; align-items: center; }
+
+/* ─── HUD: D-PAD (mobile, bottom-right) ───────────────────────────────────── */
+.dpad {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 30;
+  display: grid;
+  grid-template-columns: 52px 52px 52px;
+  grid-template-rows: 52px 52px;
+  gap: 6px;
+}
+
+.dpad-btn {
+  display: grid;
+  place-items: center;
+  color: var(--ink);
+  background: rgba(254, 252, 243, .88);
+  border: var(--border);
+  font-family: "Press Start 2P", monospace;
+  font-size: 18px;
+  box-shadow: 0 4px 0 var(--ink);
+  user-select: none;
+  transition: transform .08s, box-shadow .08s;
+}
+.dpad-btn:active { transform: translateY(4px); box-shadow: 0 0 0 var(--ink); }
+
+.dpad-up    { grid-column: 2; grid-row: 1; }
+.dpad-left  { grid-column: 1; grid-row: 2; }
+.dpad-down  { grid-column: 2; grid-row: 2; }
+.dpad-right { grid-column: 3; grid-row: 2; }
+
+/* ─── ROOM PANEL (slide-in side sheet) ─────────────────────────────────────── */
+.room-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 60;
+  width: min(480px, 100vw);
+  background: var(--panel);
+  border-left: 5px solid var(--ink);
+  box-shadow: -12px 0 0 var(--shadow);
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform .22s cubic-bezier(.4,0,.2,1);
+  overflow: hidden;
+}
+.room-panel.open { transform: translateX(0); }
+
+/* Dim backdrop */
+.room-panel::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: rgba(21, 27, 40, .5);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .22s;
+}
+.room-panel.open::before { opacity: 1; pointer-events: auto; }
+
+.room-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px;
+  background: var(--ink);
+  color: var(--paper);
+  border-bottom: 4px solid #0d1120;
+  flex-shrink: 0;
+}
+
+.room-panel-title {
+  font-family: "Press Start 2P", monospace;
+  font-size: clamp(10px, 2vw, 14px);
+  line-height: 1.5;
+  letter-spacing: 0;
+}
+
+.close-btn {
+  color: var(--paper);
+  background: #2f3e5a;
+}
+.close-btn:hover { background: #c0392b; }
+
+.room-panel-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+}
+
+/* ─── SECTIONS ──────────────────────────────────────────────────────────────── */
+.section { display: none; animation: fadeUp .2s ease both; }
+.section.active { display: block; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── TYPOGRAPHY ────────────────────────────────────────────────────────────── */
+.lead {
+  font-size: 16px;
+  line-height: 1.75;
+  font-weight: 700;
+  margin-bottom: 18px;
+  color: #263248;
+}
+
+/* ─── STAT GRID ─────────────────────────────────────────────────────────────── */
+.stat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 18px 0;
+}
+.stat {
+  padding: 12px;
+  background: #fff7db;
+  border: var(--border);
+  box-shadow: inset -4px -4px 0 rgba(0,0,0,.07);
+}
+.stat strong {
+  display: block;
+  font-family: "Press Start 2P", monospace;
+  font-size: 9px;
+  margin-bottom: 6px;
+  color: var(--ink);
+}
+.stat span { font-weight: 800; line-height: 1.4; }
+
+/* ─── TAGS ──────────────────────────────────────────────────────────────────── */
+.tag-list { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; margin-top: 14px; }
+.tag {
+  padding: 8px 10px;
+  color: var(--ink);
+  background: var(--gold);
+  border: var(--border);
+  font-weight: 800;
+  box-shadow: 0 3px 0 var(--ink);
+}
+
+/* ─── SKILL CARDS ──────────────────────────────────────────────────────────── */
+.skill-groups, .project-list { display: grid; gap: 12px; }
+
+.skill-card, .project-card, .contact-card {
+  padding: 14px;
+  background: #fff7db;
+  border: var(--border);
+  box-shadow: inset -5px -5px 0 rgba(0,0,0,.06);
+}
+.skill-card h3, .project-card h3, .contact-card h3 {
+  margin-bottom: 8px;
+  font-size: 17px;
+  line-height: 1.35;
+  color: var(--ink);
+}
+.skill-card p, .project-card p, .contact-card p {
+  line-height: 1.65;
+  font-weight: 650;
+}
+
+/* ─── PROJECT META & LINKS ──────────────────────────────────────────────────── */
+.project-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.project-meta span {
+  padding: 5px 8px;
+  background: #d8ecff;
+  border: 2px solid var(--ink);
+  font-size: 12px;
+  font-weight: 800;
+}
+.project-links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.repo-link {
+  padding: 8px 10px;
+  color: var(--paper);
+  text-decoration: none;
+  background: #263248;
+  border: var(--border);
+  font-weight: 900;
+  box-shadow: 0 3px 0 var(--ink);
+  transition: background .12s;
+}
+.repo-link:hover { background: var(--blue); }
+
+/* ─── CONTACT LINKS ─────────────────────────────────────────────────────────── */
+.contact-links { display: grid; gap: 10px; margin-top: 12px; }
+.link-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+  padding: 10px 12px;
+  color: var(--ink);
+  text-decoration: none;
+  background: var(--paper);
+  border: var(--border);
+  font-weight: 800;
+  box-shadow: 0 4px 0 var(--ink);
+  overflow-wrap: anywhere;
+  transition: background .12s;
+}
+.link-btn:hover { background: #fff0ba; }
+
+/* ─── EDITABLE ──────────────────────────────────────────────────────────────── */
+.editable { outline: 0; }
+.editing .editable {
+  background: #fff3c9;
+  box-shadow: 0 0 0 3px var(--ink);
+  border-radius: 2px;
+}
+
+/* ─── TOAST ─────────────────────────────────────────────────────────────────── */
+.toast {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 80;
+  max-width: min(380px, calc(100vw - 32px));
+  padding: 12px 14px;
+  color: var(--paper);
+  background: var(--ink);
+  border: var(--border);
+  box-shadow: 0 6px 0 rgba(21,27,40,.24);
+  font-family: "Press Start 2P", monospace;
+  font-size: 9px;
+  line-height: 1.7;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity .18s, transform .18s;
+  pointer-events: none;
+}
+.toast.show { opacity: 1; transform: translateY(0); }
+
+/* ─── RESPONSIVE ──────────────────────────────────────────────────────────────*/
+@media (max-width: 600px) {
+  .hud-note   { font-size: 7px; }
+  .hud-actions .pixel-btn { font-size: 7px; padding: 6px 8px; }
+  .dialogue-box { bottom: 80px; padding: 10px 12px; }
+  .dpad { right: 10px; bottom: 10px; }
+  .dpad-btn { font-size: 14px; }
+  .stat-grid { grid-template-columns: 1fr; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    transition-duration: .01ms !important;
+  }
+}
