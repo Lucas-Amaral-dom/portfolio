@@ -1,0 +1,21 @@
+-- Estrutura base para Lovable Cloud / Supabase.
+create table if not exists public.site_content (key text primary key, value text not null);
+create table if not exists public.projects (id uuid primary key default gen_random_uuid(), title text not null, description text not null, tags text[] default '{}', links text[] default '{}', sort_order int default 0);
+create table if not exists public.skills (id uuid primary key default gen_random_uuid(), group_name text not null, name text not null, level int not null default 0 check(level between 0 and 100), sort_order int default 0);
+create table if not exists public.contact_messages (id uuid primary key default gen_random_uuid(), name text not null, email text not null, message text not null, created_at timestamptz not null default now());
+create table if not exists public.user_roles (user_id uuid primary key references auth.users(id) on delete cascade, role text not null default 'admin' check(role in ('admin','editor')));
+create or replace function public.has_role(required_role text) returns boolean language sql stable security definer set search_path=public as $$ select exists(select 1 from public.user_roles where user_id=auth.uid() and role=required_role); $$;
+alter table public.site_content enable row level security;
+alter table public.projects enable row level security;
+alter table public.skills enable row level security;
+alter table public.contact_messages enable row level security;
+alter table public.user_roles enable row level security;
+drop policy if exists "public read content" on public.site_content; create policy "public read content" on public.site_content for select using (true);
+drop policy if exists "admin write content" on public.site_content; create policy "admin write content" on public.site_content for all using (public.has_role('admin')) with check (public.has_role('admin'));
+drop policy if exists "public read projects" on public.projects; create policy "public read projects" on public.projects for select using (true);
+drop policy if exists "admin write projects" on public.projects; create policy "admin write projects" on public.projects for all using (public.has_role('admin')) with check (public.has_role('admin'));
+drop policy if exists "public read skills" on public.skills; create policy "public read skills" on public.skills for select using (true);
+drop policy if exists "admin write skills" on public.skills; create policy "admin write skills" on public.skills for all using (public.has_role('admin')) with check (public.has_role('admin'));
+drop policy if exists "public insert messages" on public.contact_messages; create policy "public insert messages" on public.contact_messages for insert with check (true);
+drop policy if exists "admin read messages" on public.contact_messages; create policy "admin read messages" on public.contact_messages for select using (public.has_role('admin'));
+drop policy if exists "admin roles" on public.user_roles; create policy "admin roles" on public.user_roles for select using (public.has_role('admin'));
